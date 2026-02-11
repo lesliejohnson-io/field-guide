@@ -1,16 +1,43 @@
-# field_guide_demo
+# Field Guide — Tablet Research Experience Demo
 
-A new Flutter project.
+A voice-enabled, tablet-based survey experience designed to rebuild trust in rural health research environments.
 
-## Getting Started
+This demo recreates the redesigned workflow from an NIH-funded Appalachian health study where paper surveys were causing cognitive overload and eroding trust.
 
-This project is a starting point for a Flutter application.
+## Purpose
 
-A few resources to get you started if this is your first Flutter project:
+This repository demonstrates:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+* Tablet-first layout architecture (fixed rail + content model)
+* Trust-forward UX principles
+* Mock survey flow with progress tracking
+* Voice-enabled question playback (ElevenLabs assets)
+* Offline-first demo experience (Flutter Web)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Status
+
+Currently implemented:
+
+* Fixed tablet scaffold
+* Interactive left navigation rail
+* Dashboard placeholder
+* Structured build process via scoped tickets
+
+In progress:
+
+* Dashboard content + primary CTA
+* Survey question flow
+* Voice playback integration
+
+## Run Locally
+
+```
+flutter run -d chrome
+```
+
+## Design Principles
+
+* Primary actions visible above the fold
+* Cognitive load reduction
+* Clear system status
+* Technology serving trust, not spectacle
