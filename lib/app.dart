@@ -10,7 +10,7 @@ class FieldGuideApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Field Guide Demo',
+      title: 'Field Guide',
       theme: appTheme,
       routes: appRoutes,
       initialRoute: AppRoutes.home,
