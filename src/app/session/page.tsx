@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { modules } from "@/lib/data/schema";
 import { questions } from "@/lib/data/questions";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useSessionStore } from "@/store/sessionStore";
+import { useSessionStore, type ReadingLevel } from "@/store/sessionStore";
 import { AgentBar } from "@/components/agent/AgentBar";
 
 export default function SessionPage() {
@@ -24,14 +24,23 @@ export default function SessionPage() {
 
   const answers = useSessionStore((s) => s.answers);
   const setAnswer = useSessionStore((s) => s.setAnswer);
+  const noteQuestionFocus = useSessionStore((s) => s.noteQuestionFocus);
+  const bumpFatigue = useSessionStore((s) => s.bumpFatigue);
 
   const audit = useSessionStore((s) => s.audit);
-
-  // ✅ live, reactive instrumentation (updates UI)
   const fatigue = useSessionStore((s) => s.fatigue);
   const nudgeShown = useSessionStore((s) => s.nudgeShown);
+  const nudgeReason = useSessionStore((s) => s.nudgeReason);
 
   const moduleQuestions = questions.filter((q) => q.module === activeModule);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      bumpFatigue(1, "time");
+    }, 45000);
+
+    return () => clearInterval(timer);
+  }, [bumpFatigue]);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -68,7 +77,7 @@ export default function SessionPage() {
                 Field Guide
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Session •{" "}
+                Session -{" "}
                 <span className="font-medium text-foreground">
                   {activeModule}
                 </span>
@@ -95,21 +104,30 @@ export default function SessionPage() {
                       <span className="text-foreground font-medium">
                         {readingLevel}
                       </span>{" "}
-                      • Fatigue:{" "}
+                      - Fatigue:{" "}
                       <span className="text-foreground font-medium">
                         {fatigue}
                       </span>{" "}
-                      • Agent:{" "}
+                      - Agent:{" "}
                       <span className="text-foreground font-medium">
                         {nudgeShown ? "Active" : "Monitoring"}
                       </span>
+                      {nudgeReason && (
+                        <>
+                          {" "}
+                          - Reason:{" "}
+                          <span className="text-foreground font-medium">
+                            {nudgeReason}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
 
                   <div className="w-[180px]">
                     <Select
                       value={readingLevel}
-                      onValueChange={(v) => setReadingLevel(v as any)}
+                      onValueChange={(v) => setReadingLevel(v as ReadingLevel)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Reading level" />
@@ -145,6 +163,7 @@ export default function SessionPage() {
                                 ? (answers[question.id] as number)
                                 : ""
                             }
+                            onFocus={() => noteQuestionFocus(question.id)}
                             onChange={(e) => {
                               const raw = e.target.value;
                               setAnswer(
@@ -164,6 +183,7 @@ export default function SessionPage() {
                                 ? (answers[question.id] as string)
                                 : ""
                             }
+                            onFocus={() => noteQuestionFocus(question.id)}
                             onChange={(e) =>
                               setAnswer(question.id, e.target.value)
                             }
@@ -178,12 +198,13 @@ export default function SessionPage() {
                                 ? (answers[question.id] as string)
                                 : ""
                             }
+                            onFocus={() => noteQuestionFocus(question.id)}
                             onChange={(e) =>
                               setAnswer(question.id, e.target.value)
                             }
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                           >
-                            <option value="">Select…</option>
+                            <option value="">Select...</option>
                             {question.options?.map((opt) => (
                               <option key={opt} value={opt}>
                                 {opt}

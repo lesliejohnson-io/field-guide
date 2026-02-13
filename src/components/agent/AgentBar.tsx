@@ -7,9 +7,25 @@ import { useSessionStore } from "@/store/sessionStore";
 export function AgentBar() {
   const fatigue = useSessionStore((s) => s.fatigue);
   const nudgeShown = useSessionStore((s) => s.nudgeShown);
+  const nudgeReason = useSessionStore((s) => s.nudgeReason);
+  const nudgeSignals = useSessionStore((s) => s.nudgeSignals);
   const setReadingLevel = useSessionStore((s) => s.setReadingLevel);
   const dismissNudge = useSessionStore((s) => s.dismissNudge);
   const addAudit = useSessionStore((s) => s.addAudit);
+  const latestSignal = nudgeSignals[0];
+
+  const reasonHint = (() => {
+    switch (latestSignal?.type) {
+      case "churn":
+        return "Suggestion: lock one answer pass and avoid repeated rewrites.";
+      case "hesitation":
+        return "Suggestion: switch to simpler language and answer quickly with a best estimate.";
+      case "contradiction":
+        return "Suggestion: review related answers for consistency before moving on.";
+      default:
+        return "Suggestion: simplify language and pause briefly.";
+    }
+  })();
 
   return (
     <AnimatePresence>
@@ -27,7 +43,10 @@ export function AgentBar() {
                 Agent intervention: reducing cognitive load
               </div>
               <div className="text-xs text-muted-foreground">
-                Fatigue signal: {fatigue}. I can simplify language and stabilize answers.
+                Reason: {nudgeReason ?? "Fatigue threshold reached"}.
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Fatigue: {fatigue}. {reasonHint}
               </div>
             </div>
 
@@ -39,7 +58,11 @@ export function AgentBar() {
                   addAudit({
                     type: "nudge_action",
                     message: "Agent action: simplify language",
-                    meta: { action: "simplify" },
+                    meta: {
+                      action: "simplify",
+                      reason: nudgeReason,
+                      signalType: latestSignal?.type,
+                    },
                   });
                   dismissNudge();
                 }}
@@ -54,7 +77,11 @@ export function AgentBar() {
                   addAudit({
                     type: "nudge_action",
                     message: "Agent action: pause",
-                    meta: { action: "pause" },
+                    meta: {
+                      action: "pause",
+                      reason: nudgeReason,
+                      signalType: latestSignal?.type,
+                    },
                   });
                   dismissNudge();
                 }}
