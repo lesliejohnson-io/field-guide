@@ -3,18 +3,8 @@
 import { useState } from "react";
 import { modules } from "@/lib/data/schema";
 import { questions } from "@/lib/data/questions";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Select,
@@ -23,15 +13,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSessionStore } from "@/store/sessionStore";
 
 export default function SessionPage() {
   const [activeModule, setActiveModule] = useState(modules[0].id);
-  const [readingLevel, setReadingLevel] =
-    useState<"simple" | "standard" | "clinical">("standard");
 
-  const moduleQuestions = questions.filter(
-    (q) => q.module === activeModule
-  );
+  const readingLevel = useSessionStore((s) => s.readingLevel);
+  const setReadingLevel = useSessionStore((s) => s.setReadingLevel);
+
+  const answers = useSessionStore((s) => s.answers);
+  const setAnswer = useSessionStore((s) => s.setAnswer);
+
+  const audit = useSessionStore((s) => s.audit);
+
+  const moduleQuestions = questions.filter((q) => q.module === activeModule);
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -64,14 +59,10 @@ export default function SessionPage() {
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">
-                Field Guide
-              </h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Field Guide</h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Session •{" "}
-                <span className="font-medium text-foreground">
-                  {activeModule}
-                </span>
+                <span className="font-medium text-foreground">{activeModule}</span>
               </p>
             </div>
             <ThemeToggle />
@@ -93,21 +84,15 @@ export default function SessionPage() {
                   <div className="w-[180px]">
                     <Select
                       value={readingLevel}
-                      onValueChange={(v) =>
-                        setReadingLevel(v as any)
-                      }
+                      onValueChange={(v) => setReadingLevel(v as any)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Reading level" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="simple">Simple</SelectItem>
-                        <SelectItem value="standard">
-                          Standard
-                        </SelectItem>
-                        <SelectItem value="clinical">
-                          Clinical
-                        </SelectItem>
+                        <SelectItem value="standard">Standard</SelectItem>
+                        <SelectItem value="clinical">Clinical</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -128,6 +113,15 @@ export default function SessionPage() {
                         {question.type === "number" && (
                           <input
                             type="number"
+                            value={
+                              typeof answers[question.id] === "number"
+                                ? (answers[question.id] as number)
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              setAnswer(question.id, raw === "" ? "" : Number(raw));
+                            }}
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                           />
                         )}
@@ -135,12 +129,26 @@ export default function SessionPage() {
                         {question.type === "text" && (
                           <input
                             type="text"
+                            value={
+                              typeof answers[question.id] === "string"
+                                ? (answers[question.id] as string)
+                                : ""
+                            }
+                            onChange={(e) => setAnswer(question.id, e.target.value)}
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                           />
                         )}
 
                         {question.type === "select" && (
-                          <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm">
+                          <select
+                            value={
+                              typeof answers[question.id] === "string"
+                                ? (answers[question.id] as string)
+                                : ""
+                            }
+                            onChange={(e) => setAnswer(question.id, e.target.value)}
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                          >
                             <option value="">Select…</option>
                             {question.options?.map((opt) => (
                               <option key={opt} value={opt}>
@@ -160,12 +168,31 @@ export default function SessionPage() {
             <TabsContent value="audit">
               <Card className="mt-6">
                 <CardHeader>
-                  <CardTitle className="text-base">
-                    Audit
-                  </CardTitle>
+                  <CardTitle className="text-base">Audit</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm text-muted-foreground">
-                  Audit timeline placeholder
+
+                <CardContent className="space-y-3">
+                  {audit.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No events yet.</p>
+                  ) : (
+                    audit.map((e) => (
+                      <div
+                        key={e.id}
+                        className="flex items-start justify-between gap-4 rounded-md border border-border/60 bg-muted/20 px-3 py-2"
+                      >
+                        <div className="space-y-1">
+                          <div className="text-sm">{e.message}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(e.ts).toLocaleTimeString()}
+                          </div>
+                        </div>
+
+                        <span className="text-xs rounded-md border border-border/60 px-2 py-1 text-muted-foreground">
+                          {e.type}
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -174,9 +201,7 @@ export default function SessionPage() {
             <TabsContent value="sync">
               <Card className="mt-6">
                 <CardHeader>
-                  <CardTitle className="text-base">
-                    Sync
-                  </CardTitle>
+                  <CardTitle className="text-base">Sync</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">
                   Sync queue placeholder
