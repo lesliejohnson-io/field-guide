@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSessionStore } from "@/store/sessionStore";
+import { AgentBar } from "@/components/agent/AgentBar";
 
 export default function SessionPage() {
   const [activeModule, setActiveModule] = useState(modules[0].id);
@@ -25,6 +26,10 @@ export default function SessionPage() {
   const setAnswer = useSessionStore((s) => s.setAnswer);
 
   const audit = useSessionStore((s) => s.audit);
+
+  // ✅ live, reactive instrumentation (updates UI)
+  const fatigue = useSessionStore((s) => s.fatigue);
+  const nudgeShown = useSessionStore((s) => s.nudgeShown);
 
   const moduleQuestions = questions.filter((q) => q.module === activeModule);
 
@@ -59,10 +64,14 @@ export default function SessionPage() {
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Field Guide</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Field Guide
+              </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Session •{" "}
-                <span className="font-medium text-foreground">{activeModule}</span>
+                <span className="font-medium text-foreground">
+                  {activeModule}
+                </span>
               </p>
             </div>
             <ThemeToggle />
@@ -79,7 +88,23 @@ export default function SessionPage() {
             <TabsContent value="capture">
               <Card className="mt-6">
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-base">Capture</CardTitle>
+                  <div className="space-y-1">
+                    <CardTitle className="text-base">Capture</CardTitle>
+                    <div className="text-xs text-muted-foreground">
+                      Mode:{" "}
+                      <span className="text-foreground font-medium">
+                        {readingLevel}
+                      </span>{" "}
+                      • Fatigue:{" "}
+                      <span className="text-foreground font-medium">
+                        {fatigue}
+                      </span>{" "}
+                      • Agent:{" "}
+                      <span className="text-foreground font-medium">
+                        {nudgeShown ? "Active" : "Monitoring"}
+                      </span>
+                    </div>
+                  </div>
 
                   <div className="w-[180px]">
                     <Select
@@ -99,6 +124,8 @@ export default function SessionPage() {
                 </CardHeader>
 
                 <CardContent className="space-y-6">
+                  <AgentBar />
+
                   {moduleQuestions.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
                       No questions in this module yet.
@@ -120,7 +147,10 @@ export default function SessionPage() {
                             }
                             onChange={(e) => {
                               const raw = e.target.value;
-                              setAnswer(question.id, raw === "" ? "" : Number(raw));
+                              setAnswer(
+                                question.id,
+                                raw === "" ? "" : Number(raw)
+                              );
                             }}
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                           />
@@ -134,7 +164,9 @@ export default function SessionPage() {
                                 ? (answers[question.id] as string)
                                 : ""
                             }
-                            onChange={(e) => setAnswer(question.id, e.target.value)}
+                            onChange={(e) =>
+                              setAnswer(question.id, e.target.value)
+                            }
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                           />
                         )}
@@ -146,7 +178,9 @@ export default function SessionPage() {
                                 ? (answers[question.id] as string)
                                 : ""
                             }
-                            onChange={(e) => setAnswer(question.id, e.target.value)}
+                            onChange={(e) =>
+                              setAnswer(question.id, e.target.value)
+                            }
                             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
                           >
                             <option value="">Select…</option>
@@ -173,7 +207,9 @@ export default function SessionPage() {
 
                 <CardContent className="space-y-3">
                   {audit.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No events yet.</p>
+                    <p className="text-sm text-muted-foreground">
+                      No events yet.
+                    </p>
                   ) : (
                     audit.map((e) => (
                       <div
