@@ -12,7 +12,7 @@ Field Guide explores how longitudinal health research systems evolve from rigid 
 
 ## Context
 
-COHRA1 was a 700-household NIH-funded longitudinal study examining oral health disparities across rural Appalachia.
+NIH-funded longitudinal study examining oral health disparities across rural Appalachia.
 
 The original system relied on:
 
@@ -197,7 +197,6 @@ flowchart LR
 - Audit-aware AI infrastructure  
 
 This is not a chatbot.  
-
 It is intelligence infrastructure.
 
 ---
