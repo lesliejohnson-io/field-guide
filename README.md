@@ -1,4 +1,8 @@
 # Field Guide
+![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue)
+![Agentic Orchestration](https://img.shields.io/badge/Architecture-Agentic-purple)
+![Human in the Loop](https://img.shields.io/badge/AI-HITL-orange)
 
 ## From Deterministic Capture to Agentic Orchestration
 
