@@ -1,10 +1,10 @@
 # Field Guide
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue)
-![Agentic Orchestration](https://img.shields.io/badge/Architecture-Agentic-purple)
-![Human in the Loop](https://img.shields.io/badge/AI-HITL-orange)
+![Agentic Orchestration](https://img.shields.io/badge/Architecture-Agentic-blue)
+![Human in the Loop](https://img.shields.io/badge/AI-HITL-blue)
 
-## From Deterministic Capture to Agentic Orchestration
+## Deterministic Capture to Agentic Orchestration
 
 Field Guide explores how longitudinal health research systems evolve from rigid survey engines into adaptive, agentic infrastructure.
 
