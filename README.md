@@ -22,9 +22,7 @@ The original system relied on:
 - Multi-day data processing  
 - Cognitive overload and response degradation  
 
-It captured data.
-
-It did not manage entropy.
+It captured data, but it didn't manage entropy.
 
 ---
 
@@ -86,8 +84,7 @@ They cannot:
 - Monitor trust erosion  
 - Coordinate multi-actor flow  
 
-They reduce friction.  
-They do not reason.
+They reduce friction but can't reason.
 
 ---
 
@@ -196,8 +193,7 @@ flowchart LR
 - Agent layering architecture  
 - Audit-aware AI infrastructure  
 
-This is not a chatbot.  
-It is intelligence infrastructure.
+This is intelligence infrastructure.
 
 ---
 
@@ -214,4 +210,3 @@ Launch → *(link here)*
 - Audit trail visualization  
 
 Field Guide evolved from a deterministic survey engine into an agentic research orchestration system.
-
