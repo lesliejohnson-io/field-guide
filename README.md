@@ -197,10 +197,6 @@ This is intelligence infrastructure.
 
 ---
 
-## Demo
-
-Launch → *(link here)*
-
 ### Features
 
 - Adaptive rephrasing (three reading tiers)  
