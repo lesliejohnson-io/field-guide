@@ -1,20 +1,78 @@
+import 'dart:convert';
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/mock_questions.dart';
 import '../models/survey_question.dart';
 import 'survey_state.dart';
 
-class SurveyController extends StateNotifier<SurveyState> {
-  SurveyController()
-      : super(SurveyState.initial(mockQuestions));
+/// Must be overridden in main.dart before the app starts.
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  throw UnimplementedError('sharedPreferencesProvider must be overridden');
+});
 
-  /// Select an [option] for a given [questionId], advancing the survey.
-  ///
-  /// If the current question is not the last one, this will move to the next
-  /// index. If it is the last question, [isComplete] is set to true and the
-  /// index is clamped to the last question.
+class SurveyController extends StateNotifier<SurveyState> {
+  SurveyController(this._prefs)
+      : super(SurveyState.initial(mockQuestions)) {
+    _loadPersistedState();
+  }
+
+  final SharedPreferences _prefs;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  static const _answersKey = 'survey_answers';
+  static const _indexKey = 'survey_index';
+  static const _completeKey = 'survey_complete';
+
+  // ── Persistence ───────────────────────────────────────────────────────────
+
+  void _loadPersistedState() {
+    final answersJson = _prefs.getString(_answersKey);
+    if (answersJson == null) return;
+    try {
+      final answers = Map<String, String>.from(
+        jsonDecode(answersJson) as Map,
+      );
+      final currentIndex = _prefs.getInt(_indexKey) ?? 0;
+      final isComplete = _prefs.getBool(_completeKey) ?? false;
+      state = state.copyWith(
+        answers: answers,
+        currentIndex: currentIndex,
+        isComplete: isComplete,
+      );
+    } catch (_) {
+      // Corrupt persisted data — start fresh.
+    }
+  }
+
+  Future<void> _persistState() async {
+    await Future.wait([
+      _prefs.setString(_answersKey, jsonEncode(state.answers)),
+      _prefs.setInt(_indexKey, state.currentIndex),
+      _prefs.setBool(_completeKey, state.isComplete),
+    ]);
+  }
+
+  // ── Audio ─────────────────────────────────────────────────────────────────
+
+  Future<void> _playCurrentAudio() async {
+    final q = state.currentQuestion;
+    if (!state.voiceEnabled || q.audioAsset == null) return;
+    try {
+      await _audioPlayer.stop();
+      // AssetSource path is relative to the Flutter assets/ directory.
+      final assetPath = q.audioAsset!.replaceFirst('assets/', '');
+      await _audioPlayer.play(AssetSource(assetPath));
+    } catch (_) {
+      // Audio file missing or playback error — fail silently.
+    }
+  }
+
+  // ── Public API ────────────────────────────────────────────────────────────
+
   void selectOption(String questionId, String option) {
-    // Update answers map immutably.
     final updatedAnswers = Map<String, String>.from(state.answers)
       ..[questionId] = option;
 
@@ -37,38 +95,56 @@ class SurveyController extends StateNotifier<SurveyState> {
       isComplete: isComplete,
     );
 
-     // 🔍 DEBUG PRINT (temporary)
-    print('--- Survey State Updated ---');
-    print('QuestionId: $questionId');
-    print('Selected: $option');
-    print('Current Index: ${state.currentIndex}');
-    print('Is Complete: ${state.isComplete}');
-    print('Answers: ${state.answers}');
-    print('Progress: ${state.progressLabel} (${(state.progress * 100).toStringAsFixed(0)}%)');
+    _persistState();
+    _playCurrentAudio();
   }
 
-  /// Jump to a specific question index, clamped to a valid range.
   void goToIndex(int index) {
-    if (state.totalQuestions == 0) {
-      return;
-    }
+    if (state.totalQuestions == 0) return;
     final clamped = index.clamp(0, state.totalQuestions - 1);
     state = state.copyWith(
       currentIndex: clamped,
-      // Moving around implies the survey is in progress.
       isComplete: false,
     );
+    _playCurrentAudio();
   }
 
-  /// Reset the survey back to the first question with no answers.
+  void goToPrevious() {
+    if (state.currentIndex > 0) {
+      goToIndex(state.currentIndex - 1);
+    }
+  }
+
+  void goToSection(SurveySection section) {
+    final index = state.questions.indexWhere((q) => q.section == section);
+    if (index == -1) return;
+    goToIndex(index);
+  }
+
   void reset() {
+    _audioPlayer.stop();
     state = SurveyState.initial(state.questions);
+    _persistState();
+  }
+
+  void toggleVoiceEnabled() {
+    state = state.copyWith(voiceEnabled: !state.voiceEnabled);
+    if (!state.voiceEnabled) {
+      _audioPlayer.stop();
+    } else {
+      _playCurrentAudio();
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 }
 
 /// Riverpod provider exposing the survey controller and its state.
 final surveyControllerProvider =
     StateNotifierProvider<SurveyController, SurveyState>(
-  (ref) => SurveyController(),
+  (ref) => SurveyController(ref.watch(sharedPreferencesProvider)),
 );
-

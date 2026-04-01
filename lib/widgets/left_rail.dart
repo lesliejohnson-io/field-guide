@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LeftRail extends StatefulWidget {
+import '../controllers/survey_controller.dart';
+import '../models/survey_question.dart';
+import '../routes.dart';
+
+class LeftRail extends ConsumerStatefulWidget {
   const LeftRail({super.key});
 
   @override
-  State<LeftRail> createState() => _LeftRailState();
+  ConsumerState<LeftRail> createState() => _LeftRailState();
 }
 
-class _LeftRailState extends State<LeftRail> {
-  // Default to "Economics" to mirror the Figma example.
-  int _selectedIndex = 6;
+class _LeftRailState extends ConsumerState<LeftRail> {
+  /// Tracks which non-survey item was last tapped (by flat nav index).
+  int? _localSelectedIndex;
 
   late final List<_NavSection> _sections = [
     const _NavSection(
@@ -35,21 +40,22 @@ class _LeftRailState extends State<LeftRail> {
         _NavItem(
           'Health Overview',
           icon: Icons.favorite_outline,
-          hasStatusDot: true,
+          surveySection: SurveySection.health,
         ),
         _NavItem(
           'Social Interaction',
           icon: Icons.group_outlined,
+          surveySection: SurveySection.social,
         ),
         _NavItem(
           'Stress Management',
           icon: Icons.self_improvement_outlined,
-          hasStatusDot: true,
+          surveySection: SurveySection.stress,
         ),
         _NavItem(
           'Economics',
           icon: Icons.account_balance_wallet_outlined,
-          hasStatusDot: true,
+          surveySection: SurveySection.economics,
         ),
       ],
     ),
@@ -80,6 +86,11 @@ class _LeftRailState extends State<LeftRail> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final surveyState = ref.watch(surveyControllerProvider);
+    final completedSections = surveyState.completedSections;
+
+    final currentSection =
+        surveyState.isComplete ? null : surveyState.currentQuestion.section;
 
     final items = <Widget>[];
     int runningIndex = 0;
@@ -90,16 +101,42 @@ class _LeftRailState extends State<LeftRail> {
       }
       for (final item in section.items) {
         final itemIndex = runningIndex;
+        final isSurveyItem = item.surveySection != null;
+
+        final bool isSelected = isSurveyItem
+            ? item.surveySection == currentSection
+            : _localSelectedIndex == itemIndex;
+
+        final bool showDot = isSurveyItem &&
+            completedSections.contains(item.surveySection);
+
         items.add(
           _NavTile(
             label: item.label,
             icon: item.icon,
-            hasStatusDot: item.hasStatusDot,
-            selected: _selectedIndex == itemIndex,
+            hasStatusDot: showDot,
+            selected: isSelected,
             onTap: () {
-              setState(() {
-                _selectedIndex = itemIndex;
-              });
+              final surveySection = item.surveySection;
+              if (surveySection != null) {
+                setState(() => _localSelectedIndex = null);
+                ref
+                    .read(surveyControllerProvider.notifier)
+                    .goToSection(surveySection);
+                final currentRoute = ModalRoute.of(context)?.settings.name;
+                if (currentRoute != AppRoutes.survey) {
+                  Navigator.of(context).pushNamed(AppRoutes.survey);
+                }
+              } else {
+                setState(() => _localSelectedIndex = itemIndex);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${item.label} — coming soon'),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
             },
           ),
         );
@@ -108,8 +145,8 @@ class _LeftRailState extends State<LeftRail> {
       items.add(const SizedBox(height: 16));
     }
 
-    const background = Color(0xFF0F1B2D); // dark navy / charcoal
-    const onBackground = Color(0xFFF9FAFB); // soft off-white
+    const background = Color(0xFF0F1B2D);
+    const onBackground = Color(0xFFF9FAFB);
 
     return Container(
       color: background,
@@ -117,7 +154,15 @@ class _LeftRailState extends State<LeftRail> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _UserBlock(),
+          _UserBlock(
+            onLogout: () {
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                AppRoutes.home,
+                (route) => false,
+              );
+              ref.read(surveyControllerProvider.notifier).reset();
+            },
+          ),
           const SizedBox(height: 24),
           Expanded(
             child: Theme(
@@ -153,12 +198,13 @@ class _LeftRailState extends State<LeftRail> {
 }
 
 class _UserBlock extends StatelessWidget {
-  const _UserBlock();
+  const _UserBlock({required this.onLogout});
+
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     const onBackground = Color(0xFFF9FAFB);
 
     return Column(
@@ -168,7 +214,7 @@ class _UserBlock extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: theme.colorScheme.primary.withOpacity(0.18),
+              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.18),
               child: Text(
                 'E',
                 style: TextStyle(
@@ -191,7 +237,7 @@ class _UserBlock extends StatelessWidget {
                 Text(
                   'Field Nurse',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: onBackground.withOpacity(0.7),
+                    color: onBackground.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -204,11 +250,9 @@ class _UserBlock extends StatelessWidget {
             padding: EdgeInsets.zero,
             minimumSize: const Size(0, 24),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            foregroundColor: onBackground.withOpacity(0.75),
+            foregroundColor: onBackground.withValues(alpha: 0.75),
           ),
-          onPressed: () {
-            // No-op for now; just visual.
-          },
+          onPressed: onLogout,
           child: const Text(
             'Logout',
             style: TextStyle(fontSize: 12),
@@ -258,14 +302,13 @@ class _NavTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const background = Color(0xFF0F1B2D);
     const onBackground = Color(0xFFF9FAFB);
     const greenAccent = Color(0xFF22C55E);
 
     final Color pillColor =
-        selected ? Colors.white.withOpacity(0.06) : Colors.transparent;
+        selected ? Colors.white.withValues(alpha: 0.06) : Colors.transparent;
     final Color textColor =
-        selected ? onBackground : onBackground.withOpacity(0.82);
+        selected ? onBackground : onBackground.withValues(alpha: 0.82);
 
     return InkWell(
       onTap: onTap,
@@ -341,9 +384,7 @@ class _LogoFooter extends StatelessWidget {
       child: SizedBox(
         height: 40,
         child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxWidth: maxWidth,
-          ),
+          constraints: BoxConstraints(maxWidth: maxWidth),
           child: _Logo(colorScheme: colorScheme),
         ),
       ),
@@ -358,8 +399,6 @@ class _Logo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Attempt to load the asset; if it is missing or invalid,
-    // fall back to a text-based placeholder.
     return Image.asset(
       'assets/images/field_guide_logo.png',
       fit: BoxFit.contain,
@@ -369,7 +408,7 @@ class _Logo extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.w700,
             letterSpacing: 2,
-            color: colorScheme.onSurface.withOpacity(0.8),
+            color: colorScheme.onSurface.withValues(alpha: 0.8),
           ),
         );
       },
@@ -391,11 +430,10 @@ class _NavItem {
   const _NavItem(
     this.label, {
     required this.icon,
-    this.hasStatusDot = false,
+    this.surveySection,
   });
 
   final String label;
   final IconData icon;
-  final bool hasStatusDot;
+  final SurveySection? surveySection;
 }
-

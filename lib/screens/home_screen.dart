@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../controllers/survey_controller.dart';
 import '../widgets/tablet_scaffold.dart';
 
 import '../routes.dart';
+
+const double _space8 = 8;
+const double _space16 = 16;
+const double _space24 = 24;
+const double _space32 = 32;
+const double _cardRadius = 16;
+const BoxShadow _cardShadow = BoxShadow(
+  color: Color(0x0A000000), // 4% opacity black
+  blurRadius: 16,
+  offset: Offset(0, 6),
+);
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -12,42 +25,55 @@ class HomeScreen extends StatelessWidget {
     final theme = Theme.of(context);
 
     return TabletScaffold(
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-              child: _DashboardContent(theme: theme),
-            ),
-          ),
-          // Sticky CTA bar that remains visible even if the dashboard content
-          // needs to scroll.
-          SafeArea(
-            top: false,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.12),
-                    blurRadius: 12,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+      body: Container(
+        color: theme.scaffoldBackgroundColor,
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(
+                  _space24,
+                  _space32,
+                  _space24,
+                  _space16,
+                ),
+                child: _DashboardContent(theme: theme),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed(AppRoutes.survey);
-                  },
-                  child: const Text('Start Surveys'),
+            ),
+            // Sticky CTA bar that remains visible even if the dashboard content
+            // needs to scroll.
+            SafeArea(
+              top: false,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(
+                  _space24,
+                  _space8,
+                  _space24,
+                  _space16,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  boxShadow: const [_cardShadow],
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      textStyle: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pushNamed(AppRoutes.survey);
+                    },
+                    child: const Text('Start Surveys'),
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -64,33 +90,33 @@ class _DashboardContent extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _DashboardHeader(theme: theme),
-        const SizedBox(height: 24),
+        const SizedBox(height: _space24),
         _ProgressSection(theme: theme),
-        const SizedBox(height: 24),
+        const SizedBox(height: _space24),
         LayoutBuilder(
           builder: (context, constraints) {
             final isNarrow = constraints.maxWidth < 900;
             if (isNarrow) {
-              return Column(
+              return const Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: const [
+                children: [
                   _TodoTodayCard(),
-                  SizedBox(height: 16),
+                  SizedBox(height: _space16),
                   _FamilyCard(),
                 ],
               );
             }
-            return Row(
+            return const Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Expanded(child: _TodoTodayCard()),
-                SizedBox(width: 16),
+                SizedBox(width: _space16),
                 Expanded(child: _FamilyCard()),
               ],
             );
           },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: _space24),
         const _BottomStatusRow(),
       ],
     );
@@ -109,9 +135,9 @@ class _DashboardHeader extends StatelessWidget {
       children: [
         Text(
           "Today's Visit",
-          style: theme.textTheme.headlineMedium,
+          style: theme.textTheme.headlineSmall,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: _space8),
         Text(
           "Here's what's on your visit today.",
           style: theme.textTheme.bodyMedium?.copyWith(
@@ -123,46 +149,45 @@ class _DashboardHeader extends StatelessWidget {
   }
 }
 
-class _ProgressSection extends StatelessWidget {
+class _ProgressSection extends ConsumerWidget {
   const _ProgressSection({required this.theme});
 
   final ThemeData theme;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cardDecoration = _cardDecoration(theme);
+    final surveyState = ref.watch(surveyControllerProvider);
+    final answered = surveyState.answers.length;
+    final total = surveyState.totalQuestions;
+
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.6),
-        ),
-      ),
+      padding: const EdgeInsets.all(_space24),
+      decoration: cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Progress',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: _space16),
           Text(
-            '0 of 6 questions answered',
+            '$answered of $total questions answered',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: _space16),
           ClipRRect(
             borderRadius: BorderRadius.circular(999),
             child: LinearProgressIndicator(
-              value: 0,
+              value: total > 0 ? answered / total : 0.0,
               minHeight: 6,
               backgroundColor:
-                  theme.colorScheme.primary.withOpacity(0.08),
+                  theme.colorScheme.primary.withValues(alpha: 0.08),
               valueColor: AlwaysStoppedAnimation<Color>(
                 theme.colorScheme.primary,
               ),
@@ -180,6 +205,7 @@ class _TodoTodayCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cardDecoration = _cardDecoration(theme);
 
     Widget buildRow(
       IconData icon,
@@ -220,36 +246,30 @@ class _TodoTodayCard extends StatelessWidget {
             ],
           ),
           if (!isLast) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: _space16),
             Divider(
               height: 1,
-              color: theme.colorScheme.outlineVariant.withOpacity(0.6),
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: _space16),
           ],
         ],
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.6),
-        ),
-      ),
+      padding: const EdgeInsets.all(_space24),
+      decoration: cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'To-Do Today',
             style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: _space16),
           buildRow(
             Icons.favorite_border,
             'Health Survey',
@@ -283,6 +303,7 @@ class _FamilyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cardDecoration = _cardDecoration(theme);
 
     Widget buildRow(String label, String value, String status) {
       Color statusColor;
@@ -331,24 +352,18 @@ class _FamilyCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.6),
-        ),
-      ),
+      padding: const EdgeInsets.all(_space24),
+      decoration: cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Your Family',
             style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: _space16),
           buildRow(
             'Grandparents',
             'Grandma Betty, Grandpa Harold',
@@ -376,17 +391,12 @@ class _BottomStatusRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cardDecoration = _cardDecoration(theme);
 
     Widget buildCard(String title, String subtitle, IconData icon) {
       return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant.withOpacity(0.6),
-          ),
-        ),
+        padding: const EdgeInsets.all(_space24),
+        decoration: cardDecoration,
         child: Row(
           children: [
             Icon(
@@ -394,18 +404,18 @@ class _BottomStatusRow extends StatelessWidget {
               size: 24,
               color: theme.colorScheme.primary,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: _space16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: _space8),
                   Text(
                     subtitle,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -429,7 +439,7 @@ class _BottomStatusRow extends StatelessWidget {
             Icons.medical_services_outlined,
           ),
         ),
-        const SizedBox(width: 16),
+        const SizedBox(width: _space16),
         Expanded(
           child: buildCard(
             'Health Check',
@@ -440,5 +450,16 @@ class _BottomStatusRow extends StatelessWidget {
       ],
     );
   }
+}
+
+BoxDecoration _cardDecoration(ThemeData theme) {
+  return BoxDecoration(
+    color: theme.colorScheme.surface,
+    borderRadius: BorderRadius.circular(_cardRadius),
+    border: Border.all(
+      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+    ),
+    boxShadow: const [_cardShadow],
+  );
 }
 

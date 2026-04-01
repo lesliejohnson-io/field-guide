@@ -9,6 +9,7 @@ class SurveyState {
     required this.currentIndex,
     required this.answers,
     required this.isComplete,
+    required this.voiceEnabled,
   });
 
   /// All questions available in the current survey session.
@@ -22,6 +23,9 @@ class SurveyState {
 
   /// Whether the survey has been completed.
   final bool isComplete;
+
+  /// Whether voice guidance is enabled for survey UI.
+  final bool voiceEnabled;
 
   /// Total number of questions in this survey.
   int get totalQuestions => questions.length;
@@ -71,13 +75,28 @@ class SurveyState {
     int? currentIndex,
     Map<String, String>? answers,
     bool? isComplete,
+    bool? voiceEnabled,
   }) {
     return SurveyState(
       questions: questions ?? this.questions,
       currentIndex: currentIndex ?? this.currentIndex,
       answers: answers ?? this.answers,
       isComplete: isComplete ?? this.isComplete,
+      voiceEnabled: voiceEnabled ?? this.voiceEnabled,
     );
+  }
+
+  /// Sections where every question has been answered.
+  Set<SurveySection> get completedSections {
+    final result = <SurveySection>{};
+    for (final section in SurveySection.values) {
+      final sectionQuestions = questions.where((q) => q.section == section);
+      if (sectionQuestions.isNotEmpty &&
+          sectionQuestions.every((q) => answers.containsKey(q.id))) {
+        result.add(section);
+      }
+    }
+    return result;
   }
 
   /// Helper for creating an initial state from a set of questions.
@@ -87,6 +106,7 @@ class SurveyState {
       currentIndex: 0,
       answers: const <String, String>{},
       isComplete: false,
+      voiceEnabled: false,
     );
   }
 }

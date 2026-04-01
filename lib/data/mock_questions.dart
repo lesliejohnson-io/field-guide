@@ -10,7 +10,7 @@ final List<SurveyQuestion> mockQuestions = <SurveyQuestion>[
     section: SurveySection.health,
     title: 'Health Question 1',
     prompt: 'Do you have trouble sleeping?',
-    options: <String>[
+    options: const <String>[
       'Never',
       'Sometimes',
       'Often',
@@ -22,7 +22,7 @@ final List<SurveyQuestion> mockQuestions = <SurveyQuestion>[
     section: SurveySection.stress,
     title: 'Stress Question 1',
     prompt: 'In the past week, how often have you felt stressed?',
-    options: <String>[
+    options: const <String>[
       'Never',
       'Sometimes',
       'Often',
@@ -34,7 +34,7 @@ final List<SurveyQuestion> mockQuestions = <SurveyQuestion>[
     section: SurveySection.social,
     title: 'Social Question 1',
     prompt: 'Do you feel you can rely on someone when you need help?',
-    options: <String>[
+    options: const <String>[
       'Yes, always',
       'Sometimes',
       'Rarely or never',
@@ -45,7 +45,7 @@ final List<SurveyQuestion> mockQuestions = <SurveyQuestion>[
     section: SurveySection.social,
     title: 'Social Question 2',
     prompt: 'How often do you feel left out?',
-    options: <String>[
+    options: const <String>[
       'Rarely or never',
       'Sometimes',
       'Often',
@@ -56,7 +56,7 @@ final List<SurveyQuestion> mockQuestions = <SurveyQuestion>[
     section: SurveySection.economics,
     title: 'Economics Question 1',
     prompt: 'Can you pay your bills each month?',
-    options: <String>[
+    options: const <String>[
       'Yes, easily',
       'Mostly, but it is hard',
       'No, I often cannot',
@@ -67,7 +67,7 @@ final List<SurveyQuestion> mockQuestions = <SurveyQuestion>[
     section: SurveySection.economics,
     title: 'Economics Question 2',
     prompt: 'Do you have enough food most weeks?',
-    options: <String>[
+    options: const <String>[
       'Yes, always',
       'Sometimes',
       'No, not enough',

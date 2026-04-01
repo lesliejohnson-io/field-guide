@@ -20,13 +20,13 @@ class TabletScaffold extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Row(
           children: [
-            SizedBox(
+            const SizedBox(
               width: _leftRailWidth,
-              child: const LeftRail(),
+              child: LeftRail(),
             ),
             VerticalDivider(
               width: 1,
@@ -35,7 +35,7 @@ class TabletScaffold extends StatelessWidget {
             ),
             Expanded(
               child: Container(
-                color: theme.colorScheme.surface,
+                color: theme.scaffoldBackgroundColor,
                 child: body,
               ),
             ),

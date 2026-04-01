@@ -23,6 +23,14 @@ class SurveyScreen extends ConsumerWidget {
               theme: theme,
               label: surveyState.progressLabel,
               progress: surveyState.progress,
+              voiceEnabled: surveyState.voiceEnabled,
+              canGoBack: surveyState.currentIndex > 0 && !surveyState.isComplete,
+              onVoiceToggle: () {
+                ref.read(surveyControllerProvider.notifier).toggleVoiceEnabled();
+              },
+              onBack: () {
+                ref.read(surveyControllerProvider.notifier).goToPrevious();
+              },
             ),
             const SizedBox(height: 32),
             Expanded(
@@ -42,9 +50,6 @@ class SurveyScreen extends ConsumerWidget {
                           prompt: currentQuestion.prompt,
                           options: currentQuestion.options,
                           onOptionTap: (option) {
-                            print(
-                              'Survey: selected option "$option" for question ${currentQuestion.id}',
-                            );
                             ref
                                 .read(surveyControllerProvider.notifier)
                                 .selectOption(currentQuestion.id, option);
@@ -83,11 +88,11 @@ class _SurveyCompleteCard extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.7),
+          color: theme.colorScheme.outlineVariant.withValues(alpha:0.7),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -133,20 +138,53 @@ class _SurveyProgressSection extends StatelessWidget {
     required this.theme,
     required this.label,
     required this.progress,
+    required this.voiceEnabled,
+    required this.canGoBack,
+    required this.onVoiceToggle,
+    required this.onBack,
   });
 
   final ThemeData theme;
   final String label;
   final double progress;
+  final bool voiceEnabled;
+  final bool canGoBack;
+  final VoidCallback onVoiceToggle;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "Today's Progress",
-          style: theme.textTheme.headlineSmall,
+        Row(
+          children: [
+            if (canGoBack) ...[
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Previous question',
+                onPressed: onBack,
+              ),
+              const SizedBox(width: 4),
+            ],
+            Expanded(
+              child: Text(
+                "Today's Progress",
+                style: theme.textTheme.headlineSmall,
+              ),
+            ),
+            Text(
+              voiceEnabled ? 'Voice On' : 'Voice Off',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Switch(
+              value: voiceEnabled,
+              onChanged: (_) => onVoiceToggle(),
+            ),
+          ],
         ),
         const SizedBox(height: 4),
         Text(
@@ -161,7 +199,7 @@ class _SurveyProgressSection extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 6,
-            backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+            backgroundColor: theme.colorScheme.primary.withValues(alpha:0.08),
             valueColor: AlwaysStoppedAnimation<Color>(
               theme.colorScheme.primary,
             ),
@@ -220,11 +258,11 @@ class _QuestionCard extends StatelessWidget {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.7),
+          color: theme.colorScheme.outlineVariant.withValues(alpha:0.7),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha:0.04),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -271,7 +309,7 @@ class _CarePromiseRow extends StatelessWidget {
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: theme.colorScheme.outlineVariant.withOpacity(0.6),
+            color: theme.colorScheme.outlineVariant.withValues(alpha:0.6),
           ),
         ),
         child: Column(
