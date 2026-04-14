@@ -214,5 +214,6 @@ Launch → *(link here)*
 - Audit trail visualization  
 
 Field Guide evolved from a deterministic survey engine into an agentic research orchestration system.
+
 Full case study: [lesliejohnson.io/field-guide](https://lesliejohnson.io/field-guide)
 
